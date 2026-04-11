@@ -47,5 +47,27 @@ int main(int argc, char *argv[]){
                 _exit(i+1);
             }
         }
+    int estado;
+        int hijos_restantes = n;
+        
+        while(hijos_restantes > 0){
+            for(int i = 0; i < n; i++){
+                if(pids[i] <= 0) continue;
+                
+                // Sincronización y espera de los hijos
+                pid_t pid_finalizado = waitpid(pids[i], &estado, WNOHANG);
+                
+                if(pid_finalizado > 0 && WIFEXITED(estado)){
+                    printf("[PADRE] Hijo %d (PID %d) termino.\n", WEXITSTATUS(estado), pid_finalizado);
+                    pids[i] = 0;
+                    hijos_restantes--;
+                }
+            }
+        }
+        
+        return 0;
+    }
+
+
     
    
