@@ -45,6 +45,9 @@ int main() {
     sigaction(SIGINT, &ignorar, NULL);
     printf("SIGINT ignorada por 3 segundos (Ctrl+C se descarta)...\n");
     sleep(3);
+	// Restauramos el handler original de SIGINT
+    sigaction(SIGINT, &signhal, NULL);
+    printf("SIGINT restaurada.\n");
 
     // Esperar señales(4)
     printf("Esperando señales...\n");
