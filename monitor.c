@@ -13,6 +13,9 @@ void manejador(int senhal) {
     } else if (senhal == SIGTERM) {
         printf("\nRecibido SIGTERM. Liberando recursos y terminando...\n");
         exit(0);
+    } else if (senhal == SIGUSR1) {
+        contador_global++;
+        printf("\nRecibido SIGUSR1, Contador = %d\n", contador_global);
     }
 }
 
@@ -32,6 +35,7 @@ int main() {
 //asocia la accion a la señal. Pasa la estructura de configuracion
     sigaction(SIGINT, &signhal, NULL);
     sigaction(SIGTERM, &signhal, NULL);
+    sigaction(SIGUSR1, &signhal, NULL);
 
     // Esperar señales(4)
     printf("Esperando señales...\n");
