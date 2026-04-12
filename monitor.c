@@ -1,11 +1,11 @@
-#include <stdio.h> 
+#include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
-
-// Contador global  
+ 
+// Contador global
 volatile sig_atomic_t contador_global= 0;
-
+ 
 // Manejador de señales(2)
 void manejador(int senhal) {
     if (senhal == SIGINT) {
@@ -15,29 +15,27 @@ void manejador(int senhal) {
         exit(0);
     } else if (senhal == SIGUSR1) {
         contador_global++;
-        printf("\nRecibido SIGUSR1, Contador = %d\n", contador_global);
+        printf("\nRecibido SIGUSR1. Contador = %d\n", contador_global);
     }
 }
-
+ 
 int main() {
-
-	//Definir la estructura de la configuracion de mi señal(1)
+    //Definir la estructura de la configuracion de mi señal(1)
     struct sigaction signhal;
-
-	// pasar la funcion que maneja las señales al sa_handler
+    // pasar la funcion que maneja las señales al sa_handler
     signhal.sa_handler = manejador;
-	// sigemptyset no bloquear ninguna señal extra dentro el handler
+    // sigemptyset no bloquear ninguna señal extra dentro el handler
     sigemptyset(&signhal.sa_mask);
-	//ningun comportamiento extra
+    //ningun comportamiento extra
     signhal.sa_flags = 0;
-
-
-	//asocia la accion a la señal. Pasa la estructura de configuracion
+ 
+    //asocia la accion a la señal. Pasa la estructura de configuracion
     sigaction(SIGINT, &signhal, NULL);
     sigaction(SIGTERM, &signhal, NULL);
     sigaction(SIGUSR1, &signhal, NULL);
-	
-	// SIG_IGN descarta la señal completamente (distinto al bloqueo: no queda pendiente)
+ 
+
+    // SIG_IGN descarta la señal completamente (distinto al bloqueo: no queda pendiente)
     struct sigaction ignorar;
     ignorar.sa_handler = SIG_IGN;
     sigemptyset(&ignorar.sa_mask);
@@ -45,16 +43,32 @@ int main() {
     sigaction(SIGINT, &ignorar, NULL);
     printf("SIGINT ignorada por 3 segundos (Ctrl+C se descarta)...\n");
     sleep(3);
-	// Restauramos el handler original de SIGINT
+    // Restauramos el handler original de SIGINT
     sigaction(SIGINT, &signhal, NULL);
     printf("SIGINT restaurada.\n");
-
+ 
+    // Crea conjunto de señales(3)
+    sigset_t senhales;
+    //inicializa un conjunto de señales dejándolo vacío.
+    sigemptyset(&senhales);
+    //agregamos señales al conjunto
+    sigaddset(&senhales, SIGINT);
+    sigaddset(&senhales, SIGUSR1);
+ 
+    // bloquea SIGINT y SIGUSR1
+    sigprocmask(SIG_BLOCK, &senhales, NULL);
+    printf("SIGINT y SIGUSR1 bloqueadas por 10 segundos...\n");
+    sleep(10);
+ 
+    // Quitamos SIGUSR1 del conjunto para desbloquearla por separado
+    sigdelset(&senhales, SIGUSR1);
+    sigprocmask(SIG_UNBLOCK, &senhales, NULL); // desbloquea solo SIGINT
+ 
     // Esperar señales(4)
     printf("Esperando señales...\n");
-
     while (1) {
         pause(); // espera hasta recibir una señal
     }
-
+ 
     return 0;
 }
