@@ -21,21 +21,30 @@ void manejador(int senhal) {
 
 int main() {
 
-//Definir la estructura de la configuracion de mi señal(1)
+	//Definir la estructura de la configuracion de mi señal(1)
     struct sigaction signhal;
 
-   // pasar la funcion que maneja las señales al sa_handler
+	// pasar la funcion que maneja las señales al sa_handler
     signhal.sa_handler = manejador;
-  // sigemptyset no bloquear ninguna señal extra dentro el handler
+	// sigemptyset no bloquear ninguna señal extra dentro el handler
     sigemptyset(&signhal.sa_mask);
-  //ningun comportamiento extra
+	//ningun comportamiento extra
     signhal.sa_flags = 0;
 
 
-//asocia la accion a la señal. Pasa la estructura de configuracion
+	//asocia la accion a la señal. Pasa la estructura de configuracion
     sigaction(SIGINT, &signhal, NULL);
     sigaction(SIGTERM, &signhal, NULL);
     sigaction(SIGUSR1, &signhal, NULL);
+	
+	// SIG_IGN descarta la señal completamente (distinto al bloqueo: no queda pendiente)
+    struct sigaction ignorar;
+    ignorar.sa_handler = SIG_IGN;
+    sigemptyset(&ignorar.sa_mask);
+    ignorar.sa_flags = 0;
+    sigaction(SIGINT, &ignorar, NULL);
+    printf("SIGINT ignorada por 3 segundos (Ctrl+C se descarta)...\n");
+    sleep(3);
 
     // Esperar señales(4)
     printf("Esperando señales...\n");
