@@ -60,9 +60,36 @@ int main() {
     printf("SIGINT y SIGUSR1 bloqueadas por 10 segundos...\n");
     sleep(10);
  
+    
     // Quitamos SIGUSR1 del conjunto para desbloquearla por separado
     sigdelset(&senhales, SIGUSR1);
     sigprocmask(SIG_UNBLOCK, &senhales, NULL); // desbloquea solo SIGINT
+ 
+    // Desbloqueamos SIGUSR1 por separado
+    sigset_t solo_usr1;
+    sigemptyset(&solo_usr1);
+    sigaddset(&solo_usr1, SIGUSR1);
+    sigprocmask(SIG_UNBLOCK, &solo_usr1, NULL);
+ 
+    // desbloquea señales
+    printf("Señales desbloqueadas.\n");
+ 
+    // Generar señal interna(5)
+    printf("Generando SIGUSR1 con raise()...\n");
+    //el proceso se envía una señal a sí mismo
+    raise(SIGUSR1);
+ 
+    // A diferencia de pause(), sigwait() captura la señal SIN ejecutar el handler
+    printf("Esperando SIGUSR1 con sigwait() (manda: kill -USR1 %d)...\n", getpid());
+    sigset_t espera;
+    sigemptyset(&espera);
+    sigaddset(&espera, SIGUSR1);
+    sigprocmask(SIG_BLOCK, &espera, NULL); // debe estar bloqueada para que sigwait funcione
+    int sig_recibida;
+    sigwait(&espera, &sig_recibida);
+    sigprocmask(SIG_UNBLOCK, &espera, NULL);
+    printf("sigwait() capturo senal %d sin pasar por el handler. Contador sigue en: %d\n",
+           sig_recibida, contador_global);
  
     // Esperar señales(4)
     printf("Esperando señales...\n");
