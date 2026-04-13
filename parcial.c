@@ -4,70 +4,58 @@
 #include <signal.h>
 #include <sys/wait.h>
 
-// Bandera para controlar el bucle del hijo
-volatile sig_atomic_t continuar = 1;
-
-// Manejador de señales para el proceso hijo
-void manejador_hijo(int senal) {
-    if (senal == SIGUSR1) {
-        printf("Soy el PID %d y recibí SIGUSR1\n", getpid());
-    } else if (senal == SIGTERM) {
-        printf("Soy el PID %d y finalizo\n", getpid());
-        continuar = 0;
+void handler(int sig) {
+    if (sig == SIGUSR1) {
+        printf("Soy PID %d y recibi SIGUSR1\n", getpid());
+    } else if (sig == SIGTERM) {
+        printf("Soy PID %d y finalizo\n", getpid());
+        exit(0);
     }
 }
 
 int main() {
-    int num_hijos = 2; // Puedes cambiar el número de hijos a crear
-    pid_t pids[num_hijos];
+    pid_t pid;
+    struct sigaction sa;
 
-    for (int i = 0; i < num_hijos; i++) {
-        pids[i] = fork();
+    // Configurar handler
+    sa.sa_handler = handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
 
-        if (pids[i] < 0) {
-            perror("Error al crear el proceso");
-            exit(1);
-        }
+    sigaction(SIGUSR1, &sa, NULL);
+    sigaction(SIGTERM, &sa, NULL);
 
-        if (pids[i] == 0) {
-            // --- CÓDIGO DEL HIJO ---
-            struct sigaction sa;
-            sa.sa_handler = manejador_hijo;
-            sigemptyset(&sa.sa_mask);
-            sa.sa_flags = 0;
+    // Crear hijo
+    pid = fork();
 
-            // Implementar handlers con sigaction()
-            sigaction(SIGUSR1, &sa, NULL);
-            sigaction(SIGTERM, &sa, NULL);
-
-            printf("Hijo %d (PID: %d) esperando señales...\n", i + 1, getpid());
-
-            while (continuar) {
-                pause(); // Espera a que llegue una señal
-            }
-            exit(0);
-        }
+    if (pid < 0) {
+        perror("Error en fork");
+        exit(1);
     }
 
-    sleep(1);
+    if (pid == 0) {
+        // Código del hijo
+        printf("Hijo creado con PID %d\n", getpid());
 
-    for (int i = 0; i < num_hijos; i++) {
-        printf("\nPadre enviando SIGUSR1 al hijo %d...\n", pids[i]);
-        kill(pids[i], SIGUSR1);
+        while (1) {
+            pause(); // Espera señales
+        }
+    } else {
+        // Código del padre
         sleep(1);
 
-        printf("Padre enviando SIGTERM al hijo %d...\n", pids[i]);
-        kill(pids[i], SIGTERM);
+        printf("Padre envia SIGUSR1 al hijo\n");
+        kill(pid, SIGUSR1);
 
-        // Monitoreo: Usa waitpid() para esperar la finalización
-        int status;
-        waitpid(pids[i], &status, 0);
-        
-        if (WIFEXITED(status)) {
-            printf("Padre: El hijo %d terminó correctamente.\n", pids[i]);
-        }
+        sleep(1);
+
+        printf("Padre envia SIGTERM al hijo\n");
+        kill(pid, SIGTERM);
+
+        // Monitorear finalización del hijo
+        waitpid(pid, NULL, 0);
+        printf("Hijo finalizado\n");
     }
 
-    printf("\nPadre: Todos los hijos han finalizado. Terminando supervisor.\n");
     return 0;
 }
