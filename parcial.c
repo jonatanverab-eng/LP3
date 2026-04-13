@@ -25,7 +25,6 @@ int main() {
     sigaction(SIGUSR1, &sa, NULL);
     sigaction(SIGTERM, &sa, NULL);
 
-    // Crear hijo
     pid = fork();
 
     if (pid < 0) {
@@ -34,26 +33,21 @@ int main() {
     }
 
     if (pid == 0) {
-        // Código del hijo
-        printf("Hijo creado con PID %d\n", getpid());
+        // HIJO
+        printf("Hijo ejecutandose con PID %d\n", getpid());
+        printf("Esperando señales...\n");
 
         while (1) {
-            pause(); // Espera señales
+            pause(); // espera señales indefinidamente
         }
+
     } else {
-        // Código del padre
-        sleep(1);
+        // PADRE
+        printf("Padre PID %d, hijo PID %d\n", getpid(), pid);
 
-        printf("Padre envia SIGUSR1 al hijo\n");
-        kill(pid, SIGUSR1);
-
-        sleep(1);
-
-        printf("Padre envia SIGTERM al hijo\n");
-        kill(pid, SIGTERM);
-
-        // Monitorear finalización del hijo
+        // El padre solo monitorea
         waitpid(pid, NULL, 0);
+
         printf("Hijo finalizado\n");
     }
 
