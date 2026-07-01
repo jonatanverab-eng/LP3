@@ -38,3 +38,16 @@ int main() {
 
     return 0;
 }
+
+
+#include <stdio.h>
+
+int main() {
+    int edad;
+
+    printf("Ingresa tu edad: ");
+    scanf("%d", &edad); // Guarda el número en la dirección de 'edad'
+
+    printf("Tu edad es: %d\n", edad);
+    return 0;
+}
